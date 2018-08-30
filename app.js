@@ -138,8 +138,9 @@ app.get("/campgrounds/:id", function(req, res){
      
  })
 
-//AUTH ROUTES
-
+  //============//
+ //AUTH ROUTES//
+//==========//
 //register form
 app.get("/register", (req, res)=>{
     res.render("register");
@@ -150,7 +151,7 @@ app.post("/register", (req, res)=>{
     const newUser = new User ({username: req.body.username});
     User.register(newUser, req.body.password, (err, user)=>{
         if(err){
-            console.log("error at the route post/register");
+            console.log(err);
             return res.render("register");
         }
         passport.authenticate("local")(req, res, ()=>{
@@ -159,16 +160,20 @@ app.post("/register", (req, res)=>{
     });
 });
 
-//login form 
+//show login form 
 app.get("/login", (req, res)=>{
     res.render("login");
 });
 
 //handling login logic
-app.post("/login", passport.authenticate("local",{
-    successRedirect: "/campgrounds",
-    failureRedirect: "/login"
-}), (req, res)=>{});
+//app.post("/login", middleware, callback)
+app.post("/login", passport.authenticate("local",
+    {
+        successRedirect: "/campgrounds",
+        failureRedirect: "/login"
+    }), (req, res)=>{
+        
+    });
 
 //logic route
 app.get("/logout", (req, res)=>{

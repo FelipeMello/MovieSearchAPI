@@ -27,6 +27,21 @@
 * NEW    /campgrounds/:id/comments/new    GET
 * CREATE /campgrounds/:id/comments        POST
 
-##Auth Part 1 - Add User Model
+##Auth Pt 1 - Add User Model
 * Install all packages needed for auth
 * Define User model
+
+##Auth Pt 2 - Register
+* Configure Passport
+* Register Routes
+* Register Template
+
+##Auth Pt 3 - Login
+* Login Routes
+* Login Template
+
+##Auth Pt 4 - Logout/NavBar
+* Add logut routes
+* Prevent user from adding a comment if not signed in
+* Add links to navbar
+* Show/hide auth links correctly
