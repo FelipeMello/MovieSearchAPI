@@ -3,23 +3,39 @@ const   express         = require("express"),
         bodyParser      = require("body-parser"),
         mongoose        = require("mongoose"),
         passport        = require("passport"),
-        localStrategy   = require("passport-local"),
-        campground      = require("./models/campground"),
-        comment         = require("./models/comment"),
-        user            = require("./models/user"),
+        LocalStrategy   = require("passport-local"),
+        Campground      = require("./models/campground"),
+        Comment         = require("./models/comment"),
+        User            = require("./models/user"),
         seedDB          = require("./seeds");
     
 
 //Using mongoose to connect to cloud mongodb Atlas
-mongoose.connect("mongodb+srv://felipe:!!Fsheelaghs2!!@cluster0-vz2p4.mongodb.net/test?retryWrites=true");
+mongoose.connect("mongodb://localhost/yelp_camp_v6");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + "/public"));
 seedDB();
 //Connect to the yelp_cap databse
 
+//PASSPORT CONFIGURATION
+app.use(require("express-session")({
+    secret: "Here we go with this thing called salt!",
+    resave: false,
+    saveUnitialized: false
+}));
 
+app.use(passport.initialize());
+app.use(passport.session());
 
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use((req, res, next) =>{
+    res.locals.currentUser = req.user;
+    next();
+});
 
 // home page
 app.get("/", function(req, res){
@@ -31,7 +47,7 @@ app.get("/", function(req, res){
 app.get("/campgrounds", function(req,res){  
     //Get All campgrounds from DB
     //when the function find() is done then it call the callback and render the data
-    campground.find({}, function(err, allCampgrounds){//callback
+    Campground.find({}, function(err, allCampgrounds){//callback
         if(err){
             console.log(err);
         }else{
@@ -49,7 +65,7 @@ app.post("/campgrounds", function(req,res){
     let desc = req.body.description;
     
     let newCampGround = {name: name, image: image, description: desc};
-    campground.create(newCampGround, function(err, newlyCreated){
+    Campground.create(newCampGround, function(err, newlyCreated){
         if(err){
             console.log(err);
         }else{
@@ -69,7 +85,7 @@ app.get("/campgrounds/new", function(req, res){
 //SHOW - shows more infor about a specific campground
 app.get("/campgrounds/:id", function(req, res){
     //find campground with provided ID
-    campground.findById(req.params.id).
+    Campground.findById(req.params.id).
     populate("comments").
     exec(function(err, foundCampground){
         if(err){
@@ -87,7 +103,7 @@ app.get("/campgrounds/:id", function(req, res){
  //==================//
  app.get("/campgrounds/:id/comments/new", function(req, res){
     // find campground by id 
-    campground.findById(req.params.id, function(err, campground){
+    Campground.findById(req.params.id, function(err, campground){
         if(err){
             console.log(err);
         }else{
@@ -100,7 +116,7 @@ app.get("/campgrounds/:id", function(req, res){
 
  app.post("/campgrounds/:id/comments", function(req, res){
      //Lookup campground by ID
-     campground.findById(req.params.id, function(err, campground){
+     Campground.findById(req.params.id, function(err, campground){
          if(err){
              console.log(err);
              res.redirect("/campgrounds");
@@ -108,7 +124,7 @@ app.get("/campgrounds/:id", function(req, res){
             //Create a new comment
             //connect new comment to campground
             //redirect to campground show page.
-            comment.create(req.body.comment, function(err, comment){
+            Comment.create(req.body.comment, function(err, comment){
                 if(err){
                     console.log(err);
                 }else{
@@ -122,7 +138,51 @@ app.get("/campgrounds/:id", function(req, res){
      
  })
 
-const port = 3000;
-app.listen(port, function(){
-    console.log(`The YelpCamp Server has started! http://127.0.0.1:${port}/`)
+//AUTH ROUTES
+
+//register form
+app.get("/register", (req, res)=>{
+    res.render("register");
+});
+
+//handle sign up logic
+app.post("/register", (req, res)=>{
+    const newUser = new User ({username: req.body.username});
+    User.register(newUser, req.body.password, (err, user)=>{
+        if(err){
+            console.log("error at the route post/register");
+            return res.render("register");
+        }
+        passport.authenticate("local")(req, res, ()=>{
+            res.redirect("/campgrounds");
+        });
+    });
+});
+
+//login form 
+app.get("/login", (req, res)=>{
+    res.render("login");
+});
+
+//handling login logic
+app.post("/login", passport.authenticate("local",{
+    successRedirect: "/campgrounds",
+    failureRedirect: "/login"
+}), (req, res)=>{});
+
+//logic route
+app.get("/logout", (req, res)=>{
+    req.logut();
+    res.redirect("/campgrounds");
+});
+
+function isLoggedIn(req, res, next){
+    if(req.isAuthenticated()){
+        return next();
+    }
+    res.redirect("login");
+}
+
+app.listen(process.env.PORT, process.env.IP, function(){
+   console.log("The YelpCamp Server Has Started!");
 });
