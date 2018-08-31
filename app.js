@@ -32,6 +32,9 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+//this will run for every single route middleware
+//Check if the user is logged in
+//req.user will be empty or it will contain the username and id
 app.use((req, res, next) =>{
     res.locals.currentUser = req.user;
     next();
@@ -45,6 +48,7 @@ app.get("/", function(req, res){
 
 //INDEX - show all campgrounds - this get all the campgrounds from the mongodb database
 app.get("/campgrounds", function(req,res){  
+    // console.log(req.user);
     //Get All campgrounds from DB
     //when the function find() is done then it call the callback and render the data
     Campground.find({}, function(err, allCampgrounds){//callback
@@ -52,7 +56,7 @@ app.get("/campgrounds", function(req,res){
             console.log(err);
         }else{
                             //name          data
-            res.render("campgrounds/index",{campgrounds:allCampgrounds});      //then render it
+            res.render("campgrounds/index",{campgrounds:allCampgrounds, currentUser: req.user});      //then render it
         }
     });
     
